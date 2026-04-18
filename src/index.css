@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@layer base {
+  .ql-editor {
+    @apply prose max-w-none;
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Student Work Manager",
+  "description": "A centralized platform for teachers to assign DOCX documents and for students to complete and submit them online without downloading.",
+  "requestFramePermissions": []
+}
