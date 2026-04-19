@@ -1,4 +1,5 @@
 export type Role = 'teacher' | 'student';
+export type Language = 'en' | 'vi';
 
 export interface User {
   uid: string;
