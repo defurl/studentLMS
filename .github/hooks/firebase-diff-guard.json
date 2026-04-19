@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "node ./.github/hooks/scripts/firebase-diff-guard.mjs",
+        "timeout": 20
+      }
+    ]
+  }
+}

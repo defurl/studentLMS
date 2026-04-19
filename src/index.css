@@ -5,4 +5,39 @@
   .ql-editor {
     @apply prose max-w-none;
   }
+
+  .ql-editor,
+  .assignment-html-content {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .assignment-html-content {
+    @apply prose max-w-none;
+  }
+
+  .assignment-html-content :where(img, video, iframe, table, pre, code) {
+    max-width: 100%;
+  }
+
+  .assignment-html-content table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .assignment-editor .ql-toolbar.ql-snow {
+    position: sticky;
+    top: 5rem;
+    z-index: 20;
+    background-color: #fff;
+  }
+
+  .assignment-editor .ql-container.ql-snow {
+    border-top: 0;
+  }
+
+  .assignment-editor .ql-editor {
+    min-height: 500px;
+  }
 }

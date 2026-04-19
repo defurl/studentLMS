@@ -140,7 +140,7 @@ export default function StudentDashboard({ user }: { user: User }) {
                   value={editorContent} 
                   onChange={setEditorContent}
                   readOnly={isReadOnly}
-                  className="h-full min-h-[500px] border-0"
+                  className="assignment-editor h-full min-h-[500px] border-0"
                   modules={{
                     toolbar: isReadOnly ? false : [
                       [{ 'header': [1, 2, 3, false] }],

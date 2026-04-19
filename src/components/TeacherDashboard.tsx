@@ -106,7 +106,7 @@ export default function TeacherDashboard({ user }: { user: User }) {
             </CardHeader>
             <CardContent>
               <div 
-                className="prose max-w-none border rounded-md p-6 min-h-[500px] bg-white"
+                className="assignment-html-content border rounded-md p-6 min-h-[500px] bg-white overflow-x-auto"
                 dangerouslySetInnerHTML={{ __html: selectedSubmission.content }}
               />
             </CardContent>
@@ -249,7 +249,7 @@ export default function TeacherDashboard({ user }: { user: User }) {
               {newContent && (
                 <div className="space-y-2">
                   <Label>Content Preview</Label>
-                  <div className="border rounded-md p-4 max-h-40 overflow-y-auto text-sm bg-zinc-50" dangerouslySetInnerHTML={{ __html: newContent }} />
+                  <div className="assignment-html-content border rounded-md p-4 max-h-40 overflow-auto text-sm bg-zinc-50" dangerouslySetInnerHTML={{ __html: newContent }} />
                 </div>
               )}
             </div>
