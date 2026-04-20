@@ -1,11 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { auth, db, signInWithGoogle, logOut } from './firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { User, Role, Language } from './types';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui';
 import TeacherDashboard from './components/TeacherDashboard';
 import StudentDashboard from './components/StudentDashboard';
+
+const CLASSROOM_OWNER_EMAIL = (import.meta.env.VITE_CLASSROOM_OWNER_EMAIL || '').trim().toLowerCase();
+
+const getRoleForEmail = (email: string | null | undefined): Role => {
+  const normalizedEmail = (email || '').trim().toLowerCase();
+  if (!CLASSROOM_OWNER_EMAIL) {
+    return 'student';
+  }
+
+  return normalizedEmail === CLASSROOM_OWNER_EMAIL ? 'teacher' : 'student';
+};
 
 const appCopy: Record<Language, {
   loading: string;
@@ -19,6 +30,9 @@ const appCopy: Record<Language, {
   teacherRole: string;
   studentRole: string;
   continue: string;
+  setupProfileTitle: string;
+  setupProfileDescription: string;
+  retry: string;
   signOut: string;
   portalSuffix: string;
 }> = {
@@ -34,6 +48,9 @@ const appCopy: Record<Language, {
     teacherRole: 'Teacher',
     studentRole: 'Student',
     continue: 'Continue',
+    setupProfileTitle: 'Setting up your profile',
+    setupProfileDescription: 'Your classroom profile is created automatically after sign-in.',
+    retry: 'Retry',
     signOut: 'Sign Out',
     portalSuffix: 'Portal',
   },
@@ -49,6 +66,9 @@ const appCopy: Record<Language, {
     teacherRole: 'Giảng viên',
     studentRole: 'Học sinh',
     continue: 'Tiếp tục',
+    setupProfileTitle: 'Đang thiết lập hồ sơ',
+    setupProfileDescription: 'Hồ sơ lớp học sẽ được tạo tự động sau khi đăng nhập.',
+    retry: 'Thử lại',
     signOut: 'Đăng xuất',
     portalSuffix: 'Portal',
   },
@@ -69,7 +89,6 @@ export default function App() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [roleSelection, setRoleSelection] = useState<Role | ''>('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [language, setLanguage] = useState<Language>(() => {
@@ -90,6 +109,10 @@ export default function App() {
   }, [language]);
 
   useEffect(() => {
+    if (!CLASSROOM_OWNER_EMAIL) {
+      console.warn('VITE_CLASSROOM_OWNER_EMAIL is not configured. All users will be assigned the student role.');
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (fUser) => {
       setLoading(true);
       setFirebaseUser(fUser);
@@ -102,11 +125,43 @@ export default function App() {
       }
 
       try {
-        const userDoc = await getDoc(doc(db, 'users', fUser.uid));
+        const expectedRole = getRoleForEmail(fUser.email);
+        const userRef = doc(db, 'users', fUser.uid);
+        const userDoc = await getDoc(userRef);
+
         if (userDoc.exists()) {
-          setUser(userDoc.data() as User);
+          const existingUser = userDoc.data() as Partial<User>;
+          const syncedUser: User = {
+            uid: fUser.uid,
+            name: existingUser.name || fUser.displayName || 'Unknown',
+            email: (existingUser.email || fUser.email || '').trim(),
+            role: expectedRole,
+            createdAt: typeof existingUser.createdAt === 'number' ? existingUser.createdAt : Date.now(),
+          };
+
+          const shouldSyncProfile =
+            existingUser.uid !== syncedUser.uid ||
+            existingUser.name !== syncedUser.name ||
+            existingUser.email !== syncedUser.email ||
+            existingUser.role !== syncedUser.role ||
+            existingUser.createdAt !== syncedUser.createdAt;
+
+          if (shouldSyncProfile) {
+            await setDoc(userRef, syncedUser);
+          }
+
+          setUser(syncedUser);
         } else {
-          setUser(null); // Needs role selection
+          const newUser: User = {
+            uid: fUser.uid,
+            name: fUser.displayName || 'Unknown',
+            email: fUser.email || '',
+            role: expectedRole,
+            createdAt: Date.now(),
+          };
+
+          await setDoc(userRef, newUser);
+          setUser(newUser);
         }
       } catch (error) {
         setUser(null);
@@ -128,26 +183,6 @@ export default function App() {
     } finally {
       setAuthLoading(false);
     }
-  };
-
-  const handleRoleSubmit = async () => {
-    if (!firebaseUser || !roleSelection) return;
-    setLoading(true);
-    setAuthError('');
-    try {
-      const newUser: User = {
-        uid: firebaseUser.uid,
-        name: firebaseUser.displayName || 'Unknown',
-        email: firebaseUser.email || '',
-        role: roleSelection as Role,
-        createdAt: Date.now(),
-      };
-      await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
-      setUser(newUser);
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Failed to save your role. Please try again.');
-    }
-    setLoading(false);
   };
 
   const LanguageToggle = () => (
@@ -207,23 +242,19 @@ export default function App() {
             <div className="flex items-center justify-end">
               <LanguageToggle />
             </div>
-            <CardTitle>{text.welcome}</CardTitle>
-            <CardDescription>{text.selectRolePrompt}</CardDescription>
+            <CardTitle>{text.setupProfileTitle}</CardTitle>
+            <CardDescription>{text.setupProfileDescription}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Select value={roleSelection} onValueChange={(v) => setRoleSelection(v as Role)}>
-              <SelectTrigger>
-                <SelectValue placeholder={text.selectRolePlaceholder} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="teacher">{text.teacherRole}</SelectItem>
-                <SelectItem value="student">{text.studentRole}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={handleRoleSubmit} disabled={!roleSelection} className="w-full">
-              {text.continue}
-            </Button>
             {authError && <p className="text-sm text-red-600">{authError}</p>}
+            <div className="grid gap-2">
+              <Button variant="outline" onClick={() => window.location.reload()} className="w-full">
+                {text.retry}
+              </Button>
+              <Button onClick={logOut} className="w-full">
+                {text.signOut}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

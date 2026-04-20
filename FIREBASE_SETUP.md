@@ -19,6 +19,8 @@ In Authentication -> Settings -> Authorized domains, ensure these are present:
 Set `VITE_CLASSROOM_OWNER_EMAIL` in `.env` to your teacher account email.
 Users signing up with that email become `teacher`; all others default to `student`.
 
+Also update `ownerEmail()` in [firestore.rules](firestore.rules) to the same exact email so Firestore blocks unauthorized teacher roles.
+
 ## 3) Firestore Database
 - Confirm Firestore database exists and is in Native mode.
 - This app uses database id from `firebase-applet.json`:
@@ -30,6 +32,8 @@ Rules are defined in `firestore.rules` for:
 - users: user can read/write own profile only
 - assignments: authenticated users can read; only teacher owner can create/update/delete
 - submissions: student owner or assignment teacher can read/update
+
+Important: replace the placeholder in `ownerEmail()` before deploying rules.
 
 Deploy rules:
 
