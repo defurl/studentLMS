@@ -4,5 +4,24 @@ dist/
 coverage/
 .DS_Store
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+firebase-debug.log*
+
+# Local environment files
 .env*
 !.env.example
+
+# Common private key and certificate files
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Service account credentials
+*service-account*.json
+*serviceAccount*.json
