@@ -25,3 +25,6 @@ firebase-debug.log*
 # Service account credentials
 *service-account*.json
 *serviceAccount*.json
+
+# Firebase app config (contains API keys — use .env instead)
+firebase-applet.json
